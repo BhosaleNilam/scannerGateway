@@ -21,8 +21,9 @@ CafeGuard backend  (/api/receipts/parse + /orders)
 1. Detects each barcode/QR scan from the physical scanner
 2. Stores the payload in a local SQLite queue (survives offline / restarts)
 3. Logs into CafeGuard with the cafe account
-4. Calls `POST /api/receipts/parse` then `POST /api/receipts/orders`
-5. Retries failed sends automatically
+4. Calls `POST /api/receipts/fiscal-scans` (stores fiscal URL in DB queue)
+5. CafeGuard worker parses + creates the order in the background
+6. Retries failed sends automatically
 
 ## Build (on any machine with Java 21 + Maven)
 

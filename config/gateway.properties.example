@@ -4,9 +4,10 @@ cafeguard.email=cafe-owner@example.com
 cafeguard.password=CHANGE_ME
 
 # How the USB scanner is attached:
-#   stdin  — HID keyboard-wedge (scanner types digits + Enter into this process)
-#   serial — USB serial / COM mode (preferred for headless mini-PCs)
-scanner.mode=stdin
+#   keyboard — global HID hook (best for Mac Mini auto-start / reboot)
+#   stdin    — HID into the focused Terminal window only
+#   serial   — USB serial / COM mode
+scanner.mode=keyboard
 scanner.serialPort=
 scanner.baudRate=9600
 

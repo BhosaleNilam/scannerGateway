@@ -2,7 +2,6 @@ package com.cafeguard.scanner;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +16,7 @@ import java.util.Objects;
 
 /**
  * Outbound HTTPS client to CafeGuard:
- * login → parse barcode text → create receipt order.
+ * login → enqueue fiscal URL (CafeGuard worker parses + creates order).
  */
 public final class CafeGuardClient {
 
@@ -41,47 +40,18 @@ public final class CafeGuardClient {
         String payload = barcode.trim();
         ensureToken();
 
-        JsonNode parsed = postJson(
-                "/api/receipts/parse",
-                mapper.createObjectNode().put("text", payload),
+        ObjectNode body = mapper.createObjectNode();
+        body.put("text", payload);
+
+        JsonNode queued = postJson(
+                "/api/receipts/fiscal-scans",
+                body,
                 true
         );
-
-        ArrayNode items = (ArrayNode) parsed.get("items");
-        if (items == null || items.isEmpty()) {
-            throw new IllegalStateException(
-                    "CafeGuard parsed zero line items from barcode. "
-                            + "warnings="
-                            + String.valueOf(parsed.get("warnings"))
-            );
-        }
-
-        ObjectNode order = mapper.createObjectNode();
-        putText(order, "orderNumber", parsed.get("orderNumber"));
-        putText(order, "tableNumber", parsed.get("tableNumber"));
-        putText(order, "receiptId", parsed.get("receiptId"));
-        putText(order, "rawText", parsed.get("rawText"));
-        if (!order.hasNonNull("rawText")) {
-            order.put("rawText", payload);
-        }
-        order.put("status", "NEW");
-        order.put(
-                "subtotal",
-                textOr(parsed.get("subtotal"), "0.00")
-        );
-        order.put("tax", textOr(parsed.get("tax"), "0.00"));
-        order.put("total", textOr(parsed.get("total"), "0.00"));
-        order.put(
-                "currency",
-                textOr(parsed.get("currency"), "USD")
-        );
-        order.set("items", items);
-
-        JsonNode created = postJson("/api/receipts/orders", order, true);
         log.info(
-                "CafeGuard accepted scan → order {} ({})",
-                textOr(created.get("internalOrderId"), "?"),
-                textOr(created.get("status"), "OK")
+                "CafeGuard queued fiscal scan id={} status={}",
+                textOr(queued.get("id"), "?"),
+                textOr(queued.get("status"), "QUEUED")
         );
     }
 
@@ -100,7 +70,6 @@ public final class CafeGuardClient {
             );
         }
         token = next;
-        // Refresh a few minutes before typical 45m JWT expiry.
         tokenExpiresAt = Instant.now().plus(Duration.ofMinutes(35));
         log.info("Signed in to CafeGuard as {}", config.email);
     }
@@ -156,14 +125,6 @@ public final class CafeGuardClient {
             responseBody = response.body() == null ? "" : response.body();
         }
 
-        if (code == 409) {
-            // Duplicate receipt — treat as success so the queue drains.
-            log.warn("Duplicate receipt (already in CafeGuard): {}", path);
-            return mapper.readTree(
-                    responseBody.isBlank() ? "{}" : responseBody
-            );
-        }
-
         if (code < 200 || code >= 300) {
             String message = extractMessage(responseBody);
             throw new IllegalStateException(
@@ -187,12 +148,6 @@ public final class CafeGuardClient {
             // fall through
         }
         return body.length() > 300 ? body.substring(0, 300) : body;
-    }
-
-    private static void putText(ObjectNode node, String field, JsonNode value) {
-        if (value != null && !value.isNull() && !value.asText().isBlank()) {
-            node.put(field, value.asText());
-        }
     }
 
     private static String textOr(JsonNode node, String fallback) {

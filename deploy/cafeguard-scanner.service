@@ -1,0 +1,20 @@
+[Unit]
+Description=CafeGuard USB barcode scanner gateway
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cafeguard
+WorkingDirectory=/opt/cafeguard-scanner
+ExecStart=/usr/bin/java -jar /opt/cafeguard-scanner/scanner-gateway.jar /opt/cafeguard-scanner/config/gateway.properties
+Restart=always
+RestartSec=5
+Environment=JAVA_TOOL_OPTIONS=-Dorg.slf4j.simpleLogger.defaultLogLevel=info
+
+# For HID keyboard-wedge mode, attach a TTY so stdin receives scans:
+# StandardInput=tty
+# TTYPath=/dev/tty1
+
+[Install]
+WantedBy=multi-user.target

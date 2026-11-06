@@ -1,0 +1,22 @@
+# CafeGuard backend (different network — outbound HTTPS only)
+cafeguard.baseUrl=https://cafeguard.techbrewery.ca
+cafeguard.email=cafe-owner@example.com
+cafeguard.password=CHANGE_ME
+
+# How the USB scanner is attached:
+#   stdin  — HID keyboard-wedge (scanner types digits + Enter into this process)
+#   serial — USB serial / COM mode (preferred for headless mini-PCs)
+scanner.mode=stdin
+scanner.serialPort=
+scanner.baudRate=9600
+
+# Local SQLite queue (survives restarts / offline periods)
+queue.dbPath=./data/scans.db
+
+# Background sender
+sender.pollIntervalMs=2000
+sender.maxAttempts=12
+sender.retryDelayMs=5000
+
+# Ignore identical barcodes scanned within this window (ms)
+scanner.dedupeWindowMs=15000

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Copy to ~/Library/LaunchAgents/com.cafeguard.scanner.plist
+  Replace __INSTALL_DIR__ with the absolute path to scannerGateway.
+  Note: stdin HID needs a focused window; for unattended use prefer
+  running start-python-gateway.command at login, or use serial later.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.cafeguard.scanner</string>
+  <key>WorkingDirectory</key>
+  <string>__INSTALL_DIR__</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/python3</string>
+    <string>__INSTALL_DIR__/scripts/fiscal_scan_gateway.py</string>
+    <string>__INSTALL_DIR__/config/gateway.properties</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>__INSTALL_DIR__/data/gateway.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>__INSTALL_DIR__/data/gateway.err.log</string>
+</dict>
+</plist>
